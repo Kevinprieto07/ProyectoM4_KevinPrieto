@@ -1,6 +1,8 @@
 const USERNAME_REGEX = /^[\p{L}\p{N}_.]{3,20}$/u
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MIN_PASSWORD_LENGTH = 6
+export const MAX_TASK_TITLE_LENGTH = 100
+export const MAX_TASK_DESCRIPTION_LENGTH = 500
 
 export function validateUsername(username: string) {
   if (!username) return 'Escribe un nombre de usuario.'
@@ -24,6 +26,19 @@ export function validatePassword(password: string) {
 export function validatePasswordConfirmation(password: string, confirmation: string) {
   if (!confirmation) return 'Confirma tu contraseña.'
   if (password !== confirmation) return 'Las contraseñas no coinciden.'
+}
+
+export function validateTaskTitle(title: string) {
+  if (!title) return 'Escribe un título.'
+  if (title.length > MAX_TASK_TITLE_LENGTH) {
+    return `El título puede tener como máximo ${MAX_TASK_TITLE_LENGTH} caracteres.`
+  }
+}
+
+export function validateTaskDescription(description: string) {
+  if (description.length > MAX_TASK_DESCRIPTION_LENGTH) {
+    return `La descripción puede tener como máximo ${MAX_TASK_DESCRIPTION_LENGTH} caracteres.`
+  }
 }
 
 export function hasErrors(errors: Record<string, string | undefined>) {
