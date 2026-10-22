@@ -7,8 +7,18 @@ vi.mock('@aws-sdk/client-sesv2', () => ({
 }))
 vi.mock('jose', () => ({ createRemoteJWKSet: vi.fn(), jwtVerify: vi.fn() }))
 
-const pendingTask = { title: 'Comprar pan', description: 'Integral', completed: false }
-const completedTask = { title: 'Pagar el arriendo', description: '', completed: true }
+const pendingTask = {
+  title: 'Comprar pan',
+  description: 'Integral',
+  completed: false,
+  important: false,
+}
+const completedTask = {
+  title: 'Pagar el arriendo',
+  description: '',
+  completed: true,
+  important: false,
+}
 
 const validRequest = {
   username: 'kevin_p',
@@ -26,6 +36,13 @@ describe('parseSummaryRequest', () => {
     expect(result).toEqual(validRequest)
   })
 
+  it('considera no importantes las tareas que no traen el campo', () => {
+    const { important: _important, ...legacyTask } = pendingTask
+    const result = parseSummaryRequest({ ...validRequest, tasks: [legacyTask] })
+
+    expect(result?.tasks[0].important).toBe(false)
+  })
+
   it.each([
     ['un valor que no es un objeto', 'hola'],
     ['un nombre de usuario muy largo', { ...validRequest, username: 'a'.repeat(21) }],
@@ -36,6 +53,7 @@ describe('parseSummaryRequest', () => {
     ['un título de más de 100 caracteres', { ...validRequest, tasks: [{ ...pendingTask, title: 'a'.repeat(101) }] }],
     ['una descripción de más de 500 caracteres', { ...validRequest, tasks: [{ ...pendingTask, description: 'a'.repeat(501) }] }],
     ['una tarea sin estado', { ...validRequest, tasks: [{ title: 'Pan', description: '' }] }],
+    ['un campo importante que no es booleano', { ...validRequest, tasks: [{ ...pendingTask, important: 'sí' }] }],
   ])('rechaza %s', (_case, body) => {
     expect(parseSummaryRequest(body)).toBeNull()
   })
@@ -47,7 +65,7 @@ describe('buildSummaryText', () => {
       ...validRequest,
       tasks: [
         pendingTask,
-        { title: 'Llamar a mamá', description: '', completed: false },
+        { title: 'Llamar a mamá', description: '', completed: false, important: false },
         completedTask,
       ],
     })
@@ -101,7 +119,14 @@ describe('buildSummaryHtml', () => {
     const html = buildSummaryHtml({
       ...validRequest,
       username: '<b>kevin</b>',
-      tasks: [{ title: '<script>alert(1)</script>', description: 'a & b', completed: false }],
+      tasks: [
+        {
+          title: '<script>alert(1)</script>',
+          description: 'a & b',
+          completed: false,
+          important: false,
+        },
+      ],
     })
 
     expect(html).not.toContain('<script>')
@@ -114,5 +139,29 @@ describe('buildSummaryHtml', () => {
     expect(buildSummaryHtml({ ...validRequest, tasks: [] })).toContain(
       'No tienes tareas registradas.',
     )
+  })
+})
+
+describe('tareas importantes en el correo', () => {
+  const tasks = [
+    { title: 'Comprar pan', description: '', completed: false, important: false },
+    { title: 'Estudiar cálculo', description: '', completed: false, important: true },
+    { title: 'Pagar el arriendo', description: '', completed: true, important: true },
+  ]
+
+  it('marca las importantes en el texto y las pone primero entre las pendientes', () => {
+    const text = buildSummaryText({ ...validRequest, tasks })
+
+    expect(text).toContain('PENDIENTES\n• Estudiar cálculo [Importante]\n• Comprar pan')
+    expect(text).toContain('✓ Pagar el arriendo [Importante]')
+  })
+
+  it('muestra la etiqueta Importante en el HTML, apagada si la tarea está completada', () => {
+    const html = buildSummaryHtml({ ...validRequest, tasks })
+
+    expect(html.indexOf('Estudiar cálculo')).toBeLessThan(html.indexOf('Comprar pan'))
+    expect(html).toContain('color:#e11d48;')
+    expect(html).toContain('color:#9f7a82;')
+    expect(html.match(/>Importante</g)).toHaveLength(2)
   })
 })

@@ -1,13 +1,14 @@
-import { Check, Trash2 } from 'lucide-react'
+import { Check, Pencil, Trash2 } from 'lucide-react'
 import type { Task } from '../types/task'
 
 interface TaskItemProps {
   task: Task
   onToggle: (task: Task) => void
+  onEdit: (task: Task) => void
   onDelete: (task: Task) => void
 }
 
-export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
+export function TaskItem({ task, onToggle, onEdit, onDelete }: TaskItemProps) {
   const checkboxId = `task-${task.id}`
 
   return (
@@ -44,15 +45,33 @@ export function TaskItem({ task, onToggle, onDelete }: TaskItemProps) {
           </p>
         )}
       </div>
-      <button
-        type="button"
-        onClick={() => onDelete(task)}
-        aria-label={`Eliminar "${task.title}"`}
-        title="Eliminar"
-        className="icon-btn hover:bg-danger-soft hover:text-danger-text"
-      >
-        <Trash2 className="size-[18px]" aria-hidden="true" />
-      </button>
+      <div className="flex shrink-0 items-center gap-1">
+        {task.important && (
+          <span
+            className={`mr-1 rounded-full px-2.5 py-0.5 text-xs font-semibold ${task.completed ? 'bg-important-muted-soft text-important-muted' : 'bg-important-soft text-important'}`}
+          >
+            Importante
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={() => onEdit(task)}
+          aria-label={`Editar "${task.title}"`}
+          title="Editar"
+          className="icon-btn hover:bg-brand-soft hover:text-brand-text"
+        >
+          <Pencil className="size-[18px]" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(task)}
+          aria-label={`Eliminar "${task.title}"`}
+          title="Eliminar"
+          className="icon-btn hover:bg-danger-soft hover:text-danger-text"
+        >
+          <Trash2 className="size-[18px]" aria-hidden="true" />
+        </button>
+      </div>
     </li>
   )
 }

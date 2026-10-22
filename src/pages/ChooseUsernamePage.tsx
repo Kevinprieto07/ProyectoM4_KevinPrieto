@@ -36,6 +36,15 @@ export function ChooseUsernamePage() {
     }
   }
 
+  async function handleLogout() {
+    try {
+      await logout()
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión:', error)
+      toast.error('No se pudo cerrar la sesión. Inténtalo de nuevo.')
+    }
+  }
+
   return (
     <AuthCard
       title="Elige tu nombre de usuario"
@@ -58,7 +67,7 @@ export function ChooseUsernamePage() {
       </form>
 
       <p className="text-center text-sm">
-        <button type="button" onClick={logout} className="link">
+        <button type="button" onClick={handleLogout} className="link">
           Usar otra cuenta
         </button>
       </p>

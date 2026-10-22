@@ -40,9 +40,30 @@ describe('TaskForm', () => {
     await user.click(submit)
 
     expect(onSubmit).toHaveBeenCalledTimes(1)
-    expect(onSubmit).toHaveBeenCalledWith({ title: 'Comprar pan', description: 'Integral' })
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: 'Comprar pan',
+      description: 'Integral',
+      important: false,
+    })
     await waitFor(() => expect(title).toHaveValue(''))
     expect(description).toHaveValue('')
+  })
+
+  it('envía la tarea como importante si se marca la casilla y luego la desmarca', async () => {
+    const { user, title, onSubmit } = renderForm()
+    const important = screen.getByLabelText('Marcar como importante')
+
+    expect(important).not.toBeChecked()
+    await user.type(title, 'Pagar el arriendo')
+    await user.click(important)
+    await user.click(screen.getByRole('button', { name: 'Guardar tarea' }))
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: 'Pagar el arriendo',
+      description: '',
+      important: true,
+    })
+    await waitFor(() => expect(important).not.toBeChecked())
   })
 
   it('conserva lo escrito si onSubmit falla', async () => {
@@ -53,6 +74,34 @@ describe('TaskForm', () => {
 
     await waitFor(() => expect(submit).toBeEnabled())
     expect(title).toHaveValue('Comprar pan')
+  })
+
+  it('se rellena con initialTask y envía los cambios', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined)
+    render(
+      <TaskForm
+        onSubmit={onSubmit}
+        initialTask={{ title: 'Comprar pan', description: 'Integral', important: true }}
+        submitLabel="Guardar cambios"
+      />,
+    )
+    const user = userEvent.setup()
+    const title = screen.getByLabelText('Título')
+
+    expect(title).toHaveValue('Comprar pan')
+    expect(screen.getByLabelText('Descripción (opcional)')).toHaveValue('Integral')
+    expect(screen.getByLabelText('Marcar como importante')).toBeChecked()
+
+    await user.clear(title)
+    await user.type(title, 'Comprar leche')
+    await user.click(screen.getByLabelText('Marcar como importante'))
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    expect(onSubmit).toHaveBeenCalledWith({
+      title: 'Comprar leche',
+      description: 'Integral',
+      important: false,
+    })
   })
 
   it('muestra el botón Cancelar solo si se pasa onCancel', async () => {

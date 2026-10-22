@@ -23,6 +23,10 @@
   --color-danger-hover: var(--danger-hover);
   --color-danger-text: var(--danger-text);
   --color-danger-soft: var(--danger-soft);
+  --color-important: var(--important);
+  --color-important-soft: var(--important-soft);
+  --color-important-muted: var(--important-muted);
+  --color-important-muted-soft: var(--important-muted-soft);
 }
 
 :root {
@@ -47,6 +51,10 @@
   --danger-hover: #b91c1c;
   --danger-text: #dc2626;
   --danger-soft: #fef2f2;
+  --important: #e11d48;
+  --important-soft: #fff1f2;
+  --important-muted: #9f7a82;
+  --important-muted-soft: #f5eef0;
   --card-shadow: 0 24px 48px -24px rgb(37 99 235 / 0.35), 0 2px 6px rgb(15 23 42 / 0.05);
   --glow-brand: rgb(37 99 235 / 0.1);
   --glow-accent: rgb(16 185 129 / 0.1);
@@ -75,6 +83,10 @@
   --danger-hover: #ef4444;
   --danger-text: #f87171;
   --danger-soft: #2a1518;
+  --important: #fb7185;
+  --important-soft: #2b1520;
+  --important-muted: #8f6f76;
+  --important-muted-soft: #1e1a20;
   --card-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.3);
   --glow-brand: rgb(37 99 235 / 0.12);
   --glow-accent: rgb(16 185 129 / 0.07);

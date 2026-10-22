@@ -20,7 +20,7 @@ describe('sendSummary', () => {
     const fetchMock = mockFetch(200, { message: 'Resumen enviado a kevin@test.com' })
     const tasks = [
       makeTask({ id: '1', title: 'Comprar pan', description: 'Integral' }),
-      makeTask({ id: '2', title: 'Pagar el arriendo', completed: true }),
+      makeTask({ id: '2', title: 'Pagar el arriendo', completed: true, important: true }),
     ]
 
     const message = await sendSummary(fakeUser, 'kevin_p', tasks)
@@ -34,8 +34,8 @@ describe('sendSummary', () => {
     const body = JSON.parse(options.body)
     expect(body.username).toBe('kevin_p')
     expect(body.tasks).toEqual([
-      { title: 'Comprar pan', description: 'Integral', completed: false },
-      { title: 'Pagar el arriendo', description: 'Integral', completed: true },
+      { title: 'Comprar pan', description: 'Integral', completed: false, important: false },
+      { title: 'Pagar el arriendo', description: 'Integral', completed: true, important: true },
     ])
   })
 

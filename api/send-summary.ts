@@ -6,7 +6,15 @@ const MAX_TITLE_LENGTH = 100
 const MAX_DESCRIPTION_LENGTH = 500
 const MAX_USERNAME_LENGTH = 20
 
-const FIREBASE_JWKS = createRemoteJWKSet(
+const REQUIRED_ENV_VARS = [
+  'VITE_FIREBASE_PROJECT_ID',
+  'SES_AWS_REGION',
+  'SES_AWS_ACCESS_KEY_ID',
+  'SES_AWS_SECRET_ACCESS_KEY',
+  'SES_FROM_EMAIL',
+]
+
+const FIREBASE_JWKS =createRemoteJWKSet(
   new URL(
     'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com',
   ),
@@ -24,6 +32,7 @@ interface SummaryTask {
   title: string
   description: string
   completed: boolean
+  important: boolean
 }
 
 interface SummaryRequest {
@@ -34,6 +43,10 @@ interface SummaryRequest {
 
 function json(status: number, body: Record<string, string>) {
   return Response.json(body, { status })
+}
+
+function getMissingEnvVars() {
+  return REQUIRED_ENV_VARS.filter((name) => !process.env[name])
 }
 
 async function getTokenUser(request: Request) {
@@ -77,7 +90,8 @@ export function parseSummaryRequest(body: unknown): SummaryRequest | null {
       task.title.length <= MAX_TITLE_LENGTH &&
       typeof task.description === 'string' &&
       task.description.length <= MAX_DESCRIPTION_LENGTH &&
-      typeof task.completed === 'boolean',
+      typeof task.completed === 'boolean' &&
+      (task.important === undefined || typeof task.important === 'boolean'),
   )
   if (!validTasks) return null
 
@@ -88,6 +102,7 @@ export function parseSummaryRequest(body: unknown): SummaryRequest | null {
       title: task.title,
       description: task.description,
       completed: task.completed,
+      important: task.important === true,
     })),
   }
 }
@@ -96,13 +111,22 @@ function plural(count: number, singular: string, pluralWord: string) {
   return `${count} ${count === 1 ? singular : pluralWord}`
 }
 
+function splitByStatus(tasks: SummaryTask[]) {
+  const pending = tasks
+    .filter((task) => !task.completed)
+    .sort((a, b) => Number(b.important) - Number(a.important))
+  const completed = tasks.filter((task) => task.completed)
+  return { pending, completed }
+}
+
 function formatTaskList(tasks: SummaryTask[], bullet: string) {
   return tasks
     .map((task) => {
+      const tag = task.important ? ' [Importante]' : ''
       const description = task.description
         ? `\n  ${task.description.replaceAll('\n', '\n  ')}`
         : ''
-      return `${bullet} ${task.title}${description}`
+      return `${bullet} ${task.title}${tag}${description}`
     })
     .join('\n')
 }
@@ -114,8 +138,7 @@ export function buildSummaryText({ username, tasks }: SummaryRequest) {
     return `${greeting}\n\nNo tienes tareas registradas.\n`
   }
 
-  const pending = tasks.filter((task) => !task.completed)
-  const completed = tasks.filter((task) => task.completed)
+  const { pending, completed } = splitByStatus(tasks)
 
   const sections = [
     greeting,
@@ -145,10 +168,15 @@ function htmlTaskRows(tasks: SummaryTask[]) {
       const title = task.completed
         ? `<span style="color:#64748b;text-decoration:line-through;">${escapeHtml(task.title)}</span>`
         : `<strong style="color:#0f172a;">${escapeHtml(task.title)}</strong>`
+      const tag = !task.important
+        ? ''
+        : task.completed
+          ? '<span style="display:inline-block;margin-left:8px;background:#f5eef0;color:#9f7a82;border-radius:999px;padding:1px 9px;font-size:11px;font-weight:700;vertical-align:middle;">Importante</span>'
+          : '<span style="display:inline-block;margin-left:8px;background:#fff1f2;color:#e11d48;border-radius:999px;padding:1px 9px;font-size:11px;font-weight:700;vertical-align:middle;">Importante</span>'
       const description = task.description
         ? `<div style="color:#64748b;font-size:14px;margin-top:2px;">${escapeHtml(task.description).replaceAll('\n', '<br>')}</div>`
         : ''
-      return `<tr><td style="width:30px;vertical-align:top;padding:7px 0;">${marker}</td><td style="padding:7px 0;font-size:15px;line-height:1.45;">${title}${description}</td></tr>`
+      return `<tr><td style="width:30px;vertical-align:top;padding:7px 0;">${marker}</td><td style="padding:7px 0;font-size:15px;line-height:1.45;">${title}${tag}${description}</td></tr>`
     })
     .join('')
 }
@@ -159,8 +187,7 @@ function htmlSection(label: string, tasks: SummaryTask[]) {
 }
 
 export function buildSummaryHtml({ username, tasks }: SummaryRequest) {
-  const pending = tasks.filter((task) => !task.completed)
-  const completed = tasks.filter((task) => task.completed)
+  const { pending, completed } = splitByStatus(tasks)
 
   const content =
     tasks.length === 0
@@ -196,6 +223,12 @@ export function buildSummaryHtml({ username, tasks }: SummaryRequest) {
 }
 
 export async function POST(request: Request) {
+  const missingEnvVars = getMissingEnvVars()
+  if (missingEnvVars.length > 0) {
+    console.error('Faltan variables de entorno:', missingEnvVars.join(', '))
+    return json(500, { error: 'El servidor no está configurado correctamente.' })
+  }
+
   const tokenUser = await getTokenUser(request)
   if (!tokenUser) return json(401, { error: 'No autorizado. Inicia sesión de nuevo.' })
   if (!tokenUser.emailVerified) {

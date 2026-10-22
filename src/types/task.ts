@@ -5,6 +5,7 @@ export interface Task {
   title: string
   description: string
   completed: boolean
+  important: boolean
   userId: string
   createdAt: Timestamp
 }
@@ -12,4 +13,5 @@ export interface Task {
 export interface NewTask {
   title: string
   description: string
+  important: boolean
 }

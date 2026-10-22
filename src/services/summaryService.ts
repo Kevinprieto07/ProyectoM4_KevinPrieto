@@ -3,10 +3,11 @@ import type { Task } from '../types/task'
 
 export async function sendSummary(user: User, username: string, tasks: Task[]) {
   const token = await user.getIdToken(true)
-  const summaryTasks = tasks.map(({ title, description, completed }) => ({
+  const summaryTasks = tasks.map(({ title, description, completed, important }) => ({
     title,
     description,
     completed,
+    important,
   }))
 
   const response = await fetch('/api/send-summary', {

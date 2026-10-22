@@ -10,12 +10,8 @@ import { TaskList } from '../components/TaskList'
 import { useAuth } from '../hooks/useAuth'
 import { useTasks } from '../hooks/useTasks'
 import { sendSummary } from '../services/summaryService'
-import { createTask, deleteTask, toggleTask } from '../services/taskService'
+import { createTask, deleteTask, toggleTask, updateTask } from '../services/taskService'
 import type { NewTask, Task } from '../types/task'
-
-function plural(count: number, singular: string, pluralWord: string) {
-  return count === 1 ? singular : pluralWord
-}
 
 export function TasksPage() {
   const { user, profile } = useAuth()
@@ -23,11 +19,10 @@ export function TasksPage() {
   const [sendingSummary, setSendingSummary] = useState(false)
   const [emailVerified, setEmailVerified] = useState(user?.emailVerified ?? false)
   const [addOpen, setAddOpen] = useState(false)
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null)
   const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const pendingCount = tasks.filter((task) => !task.completed).length
-  const completedCount = tasks.length - pendingCount
   const summaryHint = !emailVerified
     ? 'Verifica tu correo para poder enviar el resumen.'
     : tasks.length === 0
@@ -57,6 +52,19 @@ export function TasksPage() {
     } catch (error) {
       console.error('No se pudo crear la tarea:', error)
       toast.error('No se pudo crear la tarea.')
+      throw error
+    }
+  }
+
+  async function handleUpdate(changes: NewTask) {
+    if (!taskToEdit) return
+    try {
+      await updateTask(taskToEdit.id, changes)
+      setTaskToEdit(null)
+      toast.success('Tarea actualizada')
+    } catch (error) {
+      console.error('No se pudo actualizar la tarea:', error)
+      toast.error('No se pudo actualizar la tarea.')
       throw error
     }
   }
@@ -91,17 +99,7 @@ export function TasksPage() {
         <EmailVerificationBanner user={user} onVerified={() => setEmailVerified(true)} />
       )}
 
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-[26px]">Mis tareas</h1>
-        {tasks.length > 0 && (
-          <p className="text-sm text-muted tabular-nums">
-            <span className="font-semibold text-brand-text">{pendingCount}</span>{' '}
-            {plural(pendingCount, 'pendiente', 'pendientes')} ·{' '}
-            <span className="font-semibold text-accent-text">{completedCount}</span>{' '}
-            {plural(completedCount, 'completada', 'completadas')}
-          </p>
-        )}
-      </div>
+      <h1 className="text-2xl font-bold tracking-tight sm:text-[26px]">Mis tareas</h1>
 
       <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-2.5 sm:flex-row">
@@ -128,6 +126,7 @@ export function TasksPage() {
         <TaskList
           tasks={tasks}
           onToggle={handleToggle}
+          onEdit={setTaskToEdit}
           onDelete={setTaskToDelete}
           onAdd={() => setAddOpen(true)}
         />
@@ -135,6 +134,22 @@ export function TasksPage() {
 
       <Modal open={addOpen} title="Nueva tarea" onClose={() => setAddOpen(false)}>
         <TaskForm onSubmit={handleCreate} onCancel={() => setAddOpen(false)} />
+      </Modal>
+
+      <Modal open={taskToEdit !== null} title="Editar tarea" onClose={() => setTaskToEdit(null)}>
+        {taskToEdit && (
+          <TaskForm
+            key={taskToEdit.id}
+            initialTask={{
+              title: taskToEdit.title,
+              description: taskToEdit.description,
+              important: taskToEdit.important,
+            }}
+            submitLabel="Guardar cambios"
+            onSubmit={handleUpdate}
+            onCancel={() => setTaskToEdit(null)}
+          />
+        )}
       </Modal>
 
       <ConfirmDialog

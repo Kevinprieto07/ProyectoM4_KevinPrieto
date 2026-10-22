@@ -7,6 +7,7 @@ export function makeTask(overrides: Partial<Task> = {}): Task {
     title: 'Comprar pan',
     description: 'Integral',
     completed: false,
+    important: false,
     userId: 'user-1',
     createdAt: Timestamp.fromMillis(0),
     ...overrides,

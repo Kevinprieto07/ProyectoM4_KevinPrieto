@@ -46,7 +46,25 @@ describe('POST /api/send-summary', () => {
     jwtVerifyMock.mockResolvedValue({
       payload: { email: 'kevin@test.com', email_verified: true },
     })
+    vi.stubEnv('VITE_FIREBASE_PROJECT_ID', 'proyecto-test')
+    vi.stubEnv('SES_AWS_REGION', 'us-east-2')
+    vi.stubEnv('SES_AWS_ACCESS_KEY_ID', 'clave-test')
+    vi.stubEnv('SES_AWS_SECRET_ACCESS_KEY', 'secreto-test')
     vi.stubEnv('SES_FROM_EMAIL', 'remitente@test.com')
+  })
+
+  it('responde 500 sin enviar nada si falta una variable de entorno', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubEnv('SES_FROM_EMAIL', '')
+
+    const response = await POST(makeRequest(validBody))
+
+    expect(response.status).toBe(500)
+    expect((await response.json()).error).toBe('El servidor no está configurado correctamente.')
+    expect(consoleError).toHaveBeenCalledWith('Faltan variables de entorno:', 'SES_FROM_EMAIL')
+    expect(jwtVerifyMock).not.toHaveBeenCalled()
+    expect(sendMock).not.toHaveBeenCalled()
+    consoleError.mockRestore()
   })
 
   it('responde 401 si no llega el token', async () => {

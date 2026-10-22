@@ -9,8 +9,13 @@ export function AppHeader() {
   const { user, profile } = useAuth()
 
   async function handleLogout() {
-    await logout()
-    toast.success('Sesión cerrada')
+    try {
+      await logout()
+      toast.success('Sesión cerrada')
+    } catch (error) {
+      console.error('No se pudo cerrar la sesión:', error)
+      toast.error('No se pudo cerrar la sesión. Inténtalo de nuevo.')
+    }
   }
 
   return (

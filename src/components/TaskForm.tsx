@@ -7,20 +7,28 @@ import { TextAreaField } from './TextAreaField'
 interface TaskFormProps {
   onSubmit: (task: NewTask) => Promise<void>
   onCancel?: () => void
+  initialTask?: NewTask
+  submitLabel?: string
 }
 
 type TaskFormErrors = Partial<Record<'title' | 'description', string>>
 
-export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
+export function TaskForm({
+  onSubmit,
+  onCancel,
+  initialTask,
+  submitLabel = 'Guardar tarea',
+}: TaskFormProps) {
+  const [title, setTitle] = useState(initialTask?.title ?? '')
+  const [description, setDescription] = useState(initialTask?.description ?? '')
+  const [important, setImportant] = useState(initialTask?.important ?? false)
   const [errors, setErrors] = useState<TaskFormErrors>({})
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const task = { title: title.trim(), description: description.trim() }
+    const task = { title: title.trim(), description: description.trim(), important }
     const validationErrors: TaskFormErrors = {
       title: validateTaskTitle(task.title),
       description: validateTaskDescription(task.description),
@@ -36,6 +44,7 @@ export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
       await onSubmit(task)
       setTitle('')
       setDescription('')
+      setImportant(false)
     } catch {
       return
     } finally {
@@ -63,6 +72,19 @@ export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
         onChange={(event) => setDescription(event.target.value)}
         error={errors.description}
       />
+      <label
+        htmlFor="task-important"
+        className="flex w-fit cursor-pointer items-center gap-2.5 text-sm font-medium select-none"
+      >
+        <input
+          id="task-important"
+          type="checkbox"
+          checked={important}
+          onChange={(event) => setImportant(event.target.checked)}
+          className="size-[18px] cursor-pointer accent-important"
+        />
+        Marcar como importante
+      </label>
       <div className="flex flex-wrap justify-end gap-2">
         {onCancel && (
           <button type="button" onClick={onCancel} className="btn btn-ghost">
@@ -70,7 +92,7 @@ export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
           </button>
         )}
         <button type="submit" disabled={submitting} className="btn btn-primary">
-          {submitting ? 'Guardando...' : 'Guardar tarea'}
+          {submitting ? 'Guardando...' : submitLabel}
         </button>
       </div>
     </form>

@@ -6,13 +6,14 @@ import { makeTask } from './mocks/tasks'
 
 function renderItem(task = makeTask()) {
   const onToggle = vi.fn()
+  const onEdit = vi.fn()
   const onDelete = vi.fn()
   render(
     <ul>
-      <TaskItem task={task} onToggle={onToggle} onDelete={onDelete} />
+      <TaskItem task={task} onToggle={onToggle} onEdit={onEdit} onDelete={onDelete} />
     </ul>,
   )
-  return { task, onToggle, onDelete, user: userEvent.setup() }
+  return { task, onToggle, onEdit, onDelete, user: userEvent.setup() }
 }
 
 describe('TaskItem', () => {
@@ -31,6 +32,14 @@ describe('TaskItem', () => {
     expect(onToggle).toHaveBeenCalledWith(task)
   })
 
+  it('llama a onEdit al pulsar Editar', async () => {
+    const { user, task, onEdit } = renderItem()
+
+    await user.click(screen.getByRole('button', { name: 'Editar "Comprar pan"' }))
+
+    expect(onEdit).toHaveBeenCalledWith(task)
+  })
+
   it('llama a onDelete al pulsar Eliminar', async () => {
     const { user, task, onDelete } = renderItem()
 
@@ -44,5 +53,23 @@ describe('TaskItem', () => {
 
     expect(screen.getByRole('checkbox', { name: 'Comprar pan' })).toBeChecked()
     expect(screen.getByText('Comprar pan')).toHaveClass('line-through')
+  })
+
+  it('no muestra la etiqueta Importante en una tarea normal', () => {
+    renderItem()
+
+    expect(screen.queryByText('Importante')).not.toBeInTheDocument()
+  })
+
+  it('muestra la etiqueta Importante en rojo si la tarea es importante', () => {
+    renderItem(makeTask({ important: true }))
+
+    expect(screen.getByText('Importante')).toHaveClass('text-important')
+  })
+
+  it('apaga la etiqueta Importante si la tarea está completada', () => {
+    renderItem(makeTask({ important: true, completed: true }))
+
+    expect(screen.getByText('Importante')).toHaveClass('text-important-muted')
   })
 })
