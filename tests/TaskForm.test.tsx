@@ -10,7 +10,7 @@ function renderForm(onSubmit = vi.fn().mockResolvedValue(undefined)) {
     user: userEvent.setup(),
     title: screen.getByLabelText('Título'),
     description: screen.getByLabelText('Descripción (opcional)'),
-    submit: screen.getByRole('button', { name: 'Agregar tarea' }),
+    submit: screen.getByRole('button', { name: 'Guardar tarea' }),
   }
 }
 
@@ -53,5 +53,14 @@ describe('TaskForm', () => {
 
     await waitFor(() => expect(submit).toBeEnabled())
     expect(title).toHaveValue('Comprar pan')
+  })
+
+  it('muestra el botón Cancelar solo si se pasa onCancel', async () => {
+    const onCancel = vi.fn()
+    render(<TaskForm onSubmit={vi.fn()} onCancel={onCancel} />)
+
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
   })
 })

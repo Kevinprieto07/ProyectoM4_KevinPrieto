@@ -1,1 +1,133 @@
 @import "tailwindcss";
+
+@theme inline {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-text: var(--brand-text);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-line: var(--brand-line);
+  --color-accent: var(--accent);
+  --color-accent-text: var(--accent-text);
+  --color-accent-bright: var(--accent-bright);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+}
+
+:root {
+  --page: #f6f8fb;
+  --surface: #ffffff;
+  --surface-muted: #fbfdfc;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --faint: #94a3b8;
+  --line: #e2e8f0;
+  --line-strong: #cbd5e1;
+  --brand: #2563eb;
+  --brand-hover: #1d4ed8;
+  --brand-text: #2563eb;
+  --brand-soft: #eff6ff;
+  --brand-line: #bfdbfe;
+  --accent: #10b981;
+  --accent-text: #059669;
+  --accent-bright: #34d399;
+  --accent-soft: #ecfdf5;
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-text: #dc2626;
+  --danger-soft: #fef2f2;
+  --card-shadow: 0 24px 48px -24px rgb(37 99 235 / 0.35), 0 2px 6px rgb(15 23 42 / 0.05);
+  --glow-brand: rgb(37 99 235 / 0.1);
+  --glow-accent: rgb(16 185 129 / 0.1);
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --page: #0b1220;
+  --surface: #111a2c;
+  --surface-muted: #0e1626;
+  --ink: #e2e8f0;
+  --muted: #94a3b8;
+  --faint: #64748b;
+  --line: #1e293b;
+  --line-strong: #334155;
+  --brand: #2563eb;
+  --brand-hover: #3b82f6;
+  --brand-text: #60a5fa;
+  --brand-soft: #132341;
+  --brand-line: #1e3a8a;
+  --accent: #10b981;
+  --accent-text: #34d399;
+  --accent-bright: #6ee7b7;
+  --accent-soft: #0d2a23;
+  --danger: #dc2626;
+  --danger-hover: #ef4444;
+  --danger-text: #f87171;
+  --danger-soft: #2a1518;
+  --card-shadow: 0 24px 48px -24px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.3);
+  --glow-brand: rgb(37 99 235 / 0.12);
+  --glow-accent: rgb(16 185 129 / 0.07);
+  color-scheme: dark;
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-ink antialiased;
+    transition: background-color 0.2s, color 0.2s;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] border border-transparent px-4 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand/35 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-brand text-white enabled:hover:bg-brand-hover;
+  }
+  .btn-outline {
+    @apply border-brand-line bg-surface text-brand-text enabled:hover:border-brand enabled:hover:bg-brand-soft;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-muted hover:bg-page hover:text-ink;
+  }
+  .btn-danger {
+    @apply bg-danger text-white hover:bg-danger-hover;
+  }
+  .btn-google {
+    @apply border-line-strong bg-surface text-ink enabled:hover:bg-page;
+  }
+  .icon-btn {
+    @apply grid size-9 shrink-0 place-items-center rounded-[9px] text-faint transition-colors hover:bg-page hover:text-ink focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand/35;
+  }
+  .input {
+    @apply w-full rounded-[10px] border border-line-strong bg-surface px-3 py-2.5 text-ink transition placeholder:text-faint focus:border-brand focus:outline-none focus:ring-3 focus:ring-brand/30 aria-[invalid=true]:border-danger;
+  }
+  .link {
+    @apply font-semibold text-brand-text hover:underline focus-visible:rounded focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand/35;
+  }
+  .auth-backdrop {
+    background:
+      radial-gradient(60% 50% at 15% 10%, var(--glow-brand), transparent 70%),
+      radial-gradient(50% 45% at 90% 90%, var(--glow-accent), transparent 70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

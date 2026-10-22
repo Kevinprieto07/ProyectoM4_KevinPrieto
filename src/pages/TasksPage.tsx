@@ -1,20 +1,38 @@
 import { useState } from 'react'
+import { Mail, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { ConfirmDialog } from '../components/ConfirmDialog'
 import { EmailVerificationBanner } from '../components/EmailVerificationBanner'
+import { LoadingScreen } from '../components/LoadingScreen'
+import { Modal } from '../components/Modal'
 import { TaskForm } from '../components/TaskForm'
 import { TaskList } from '../components/TaskList'
 import { useAuth } from '../hooks/useAuth'
 import { useTasks } from '../hooks/useTasks'
-import { logout } from '../services/authService'
 import { sendSummary } from '../services/summaryService'
 import { createTask, deleteTask, toggleTask } from '../services/taskService'
 import type { NewTask, Task } from '../types/task'
+
+function plural(count: number, singular: string, pluralWord: string) {
+  return count === 1 ? singular : pluralWord
+}
 
 export function TasksPage() {
   const { user, profile } = useAuth()
   const { tasks, loading } = useTasks(user?.uid ?? null)
   const [sendingSummary, setSendingSummary] = useState(false)
   const [emailVerified, setEmailVerified] = useState(user?.emailVerified ?? false)
+  const [addOpen, setAddOpen] = useState(false)
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const pendingCount = tasks.filter((task) => !task.completed).length
+  const completedCount = tasks.length - pendingCount
+  const summaryHint = !emailVerified
+    ? 'Verifica tu correo para poder enviar el resumen.'
+    : tasks.length === 0
+      ? 'Crea una tarea para poder enviar el resumen.'
+      : null
 
   async function handleSendSummary() {
     if (!user || !profile) return
@@ -30,15 +48,11 @@ export function TasksPage() {
     }
   }
 
-  async function handleLogout() {
-    await logout()
-    toast.success('Sesión cerrada')
-  }
-
   async function handleCreate(task: NewTask) {
     if (!user) return
     try {
       await createTask(user.uid, task)
+      setAddOpen(false)
       toast.success('Tarea creada')
     } catch (error) {
       console.error('No se pudo crear la tarea:', error)
@@ -56,56 +70,87 @@ export function TasksPage() {
     }
   }
 
-  async function handleDelete(task: Task) {
-    if (!window.confirm(`¿Eliminar "${task.title}"?`)) return
+  async function handleConfirmDelete() {
+    if (!taskToDelete) return
+    setDeleting(true)
     try {
-      await deleteTask(task.id)
+      await deleteTask(taskToDelete.id)
+      setTaskToDelete(null)
       toast.success('Tarea eliminada')
     } catch (error) {
       console.error('No se pudo eliminar la tarea:', error)
       toast.error('No se pudo eliminar la tarea.')
+    } finally {
+      setDeleting(false)
     }
   }
 
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-6 p-4">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Mis tareas</h1>
-          <p className="text-sm">
-            Hola, {profile?.username} ({user?.email})
-          </p>
-        </div>
-        <button type="button" onClick={handleLogout} className="rounded border px-4 py-2">
-          Cerrar sesión
-        </button>
-      </header>
-
+    <main className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-7 sm:py-10">
       {user && !emailVerified && (
         <EmailVerificationBanner user={user} onVerified={() => setEmailVerified(true)} />
       )}
 
-      <TaskForm onSubmit={handleCreate} />
-
-      <div className="flex flex-col gap-1">
-        <button
-          type="button"
-          onClick={handleSendSummary}
-          disabled={sendingSummary || tasks.length === 0 || !emailVerified}
-          className="rounded border px-4 py-2 disabled:opacity-50"
-        >
-          {sendingSummary ? 'Enviando...' : 'Enviar resumen por correo'}
-        </button>
-        {!loading && tasks.length === 0 && (
-          <p className="text-center text-sm">Crea una tarea para poder enviar el resumen.</p>
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-[26px]">Mis tareas</h1>
+        {tasks.length > 0 && (
+          <p className="text-sm text-muted tabular-nums">
+            <span className="font-semibold text-brand-text">{pendingCount}</span>{' '}
+            {plural(pendingCount, 'pendiente', 'pendientes')} ·{' '}
+            <span className="font-semibold text-accent-text">{completedCount}</span>{' '}
+            {plural(completedCount, 'completada', 'completadas')}
+          </p>
         )}
       </div>
 
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          <button type="button" onClick={() => setAddOpen(true)} className="btn btn-primary">
+            <Plus className="size-[18px]" aria-hidden="true" />
+            Agregar tarea
+          </button>
+          <button
+            type="button"
+            onClick={handleSendSummary}
+            disabled={sendingSummary || summaryHint !== null}
+            className="btn btn-outline"
+          >
+            <Mail className="size-[18px]" aria-hidden="true" />
+            {sendingSummary ? 'Enviando...' : 'Enviar resumen'}
+          </button>
+        </div>
+        {!loading && summaryHint && <p className="text-[13px] text-muted">{summaryHint}</p>}
+      </div>
+
       {loading ? (
-        <p className="text-center">Cargando tareas...</p>
+        <LoadingScreen />
       ) : (
-        <TaskList tasks={tasks} onToggle={handleToggle} onDelete={handleDelete} />
+        <TaskList
+          tasks={tasks}
+          onToggle={handleToggle}
+          onDelete={setTaskToDelete}
+          onAdd={() => setAddOpen(true)}
+        />
       )}
+
+      <Modal open={addOpen} title="Nueva tarea" onClose={() => setAddOpen(false)}>
+        <TaskForm onSubmit={handleCreate} onCancel={() => setAddOpen(false)} />
+      </Modal>
+
+      <ConfirmDialog
+        open={taskToDelete !== null}
+        title="¿Eliminar esta tarea?"
+        message={
+          <>
+            <strong className="text-ink">“{taskToDelete?.title}”</strong> se eliminará de forma
+            permanente.
+          </>
+        }
+        confirmLabel="Eliminar"
+        busy={deleting}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setTaskToDelete(null)}
+      />
     </main>
   )
 }

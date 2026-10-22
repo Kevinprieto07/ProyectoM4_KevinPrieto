@@ -1,3 +1,10 @@
+import { LoaderCircle } from 'lucide-react'
+
 export function LoadingScreen() {
-  return <p className="p-4 text-center">Cargando...</p>
+  return (
+    <div className="flex items-center justify-center gap-2 p-16 text-muted">
+      <LoaderCircle className="size-5 animate-spin text-brand-text" aria-hidden="true" />
+      <p>Cargando...</p>
+    </div>
+  )
 }

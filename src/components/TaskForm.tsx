@@ -6,11 +6,12 @@ import { TextAreaField } from './TextAreaField'
 
 interface TaskFormProps {
   onSubmit: (task: NewTask) => Promise<void>
+  onCancel?: () => void
 }
 
 type TaskFormErrors = Partial<Record<'title' | 'description', string>>
 
-export function TaskForm({ onSubmit }: TaskFormProps) {
+export function TaskForm({ onSubmit, onCancel }: TaskFormProps) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [errors, setErrors] = useState<TaskFormErrors>({})
@@ -47,24 +48,31 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
       <FormField
         id="task-title"
         label="Título"
+        placeholder="Ej.: Comprar pan"
+        autoFocus
         value={title}
         onChange={(event) => setTitle(event.target.value)}
         error={errors.title}
       />
       <TextAreaField
         id="task-description"
-        label="Descripción (opcional)"
+        label="Descripción"
+        hint="(opcional)"
+        placeholder="Detalles, lugar, hora…"
         value={description}
         onChange={(event) => setDescription(event.target.value)}
         error={errors.description}
       />
-      <button
-        type="submit"
-        disabled={submitting}
-        className="rounded border px-4 py-2 disabled:opacity-50"
-      >
-        {submitting ? 'Guardando...' : 'Agregar tarea'}
-      </button>
+      <div className="flex flex-wrap justify-end gap-2">
+        {onCancel && (
+          <button type="button" onClick={onCancel} className="btn btn-ghost">
+            Cancelar
+          </button>
+        )}
+        <button type="submit" disabled={submitting} className="btn btn-primary">
+          {submitting ? 'Guardando...' : 'Guardar tarea'}
+        </button>
+      </div>
     </form>
   )
 }

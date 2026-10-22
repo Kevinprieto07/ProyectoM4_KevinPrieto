@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { buildSummaryText, parseSummaryRequest } from '../api/send-summary'
+import { buildSummaryHtml, buildSummaryText, parseSummaryRequest } from '../api/send-summary'
 
 vi.mock('@aws-sdk/client-sesv2', () => ({
   SESv2Client: class {},
@@ -80,5 +80,39 @@ describe('buildSummaryText', () => {
 
   it('usa "usuario" si no llega el nombre', () => {
     expect(buildSummaryText({ ...validRequest, username: '' })).toContain('Hola, usuario:')
+  })
+})
+
+describe('buildSummaryHtml', () => {
+  it('incluye la marca, el saludo y las dos secciones', () => {
+    const html = buildSummaryHtml({ ...validRequest, tasks: [pendingTask, completedTask] })
+
+    expect(html).toContain('Remember-tasks')
+    expect(html).toContain('Hola, kevin_p:')
+    expect(html).toContain('1 pendiente')
+    expect(html).toContain('1 completada')
+    expect(html).toContain('Pendientes')
+    expect(html).toContain('Completadas')
+    expect(html).toContain('Comprar pan')
+    expect(html).toContain('Pagar el arriendo')
+  })
+
+  it('escapa el HTML que escriba el usuario', () => {
+    const html = buildSummaryHtml({
+      ...validRequest,
+      username: '<b>kevin</b>',
+      tasks: [{ title: '<script>alert(1)</script>', description: 'a & b', completed: false }],
+    })
+
+    expect(html).not.toContain('<script>')
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(html).toContain('&lt;b&gt;kevin&lt;/b&gt;')
+    expect(html).toContain('a &amp; b')
+  })
+
+  it('avisa si no hay tareas', () => {
+    expect(buildSummaryHtml({ ...validRequest, tasks: [] })).toContain(
+      'No tienes tareas registradas.',
+    )
   })
 })

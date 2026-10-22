@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { User } from 'firebase/auth'
+import { Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { refreshEmailVerification, resendVerificationEmail } from '../services/authService'
 import { getAuthError } from '../utils/authErrors'
@@ -42,28 +43,34 @@ export function EmailVerificationBanner({ user, onVerified }: EmailVerificationB
   }
 
   return (
-    <section role="status" className="flex flex-col gap-2 rounded border p-3">
-      <p>
-        Verifica tu correo para poder enviar resúmenes. Te enviamos un enlace a{' '}
-        <strong>{user.email}</strong>.
-      </p>
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={handleResend}
-          disabled={busy}
-          className="rounded border px-3 py-1 disabled:opacity-50"
-        >
-          Reenviar correo
-        </button>
-        <button
-          type="button"
-          onClick={handleCheck}
-          disabled={busy}
-          className="rounded border px-3 py-1 disabled:opacity-50"
-        >
-          Ya lo verifiqué
-        </button>
+    <section
+      role="status"
+      className="flex items-start gap-3 rounded-2xl border border-brand-line bg-brand-soft px-4 py-3.5"
+    >
+      <Mail className="mt-0.5 size-5 shrink-0 text-brand-text" aria-hidden="true" />
+      <div className="flex min-w-0 flex-col gap-2.5">
+        <p className="text-sm break-words">
+          Verifica tu correo para poder enviar resúmenes. Te enviamos un enlace a{' '}
+          <strong>{user.email}</strong>.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={busy}
+            className="btn btn-outline px-3 py-1.5 text-[13px]"
+          >
+            Reenviar correo
+          </button>
+          <button
+            type="button"
+            onClick={handleCheck}
+            disabled={busy}
+            className="btn btn-primary px-3 py-1.5 text-[13px]"
+          >
+            Ya lo verifiqué
+          </button>
+        </div>
       </div>
     </section>
   )

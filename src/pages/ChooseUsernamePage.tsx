@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import toast from 'react-hot-toast'
+import { AuthCard } from '../components/AuthCard'
 import { FormField } from '../components/FormField'
 import { useAuth } from '../hooks/useAuth'
 import { logout } from '../services/authService'
@@ -36,33 +37,31 @@ export function ChooseUsernamePage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-4 p-4">
-      <h1 className="text-2xl font-bold">Elige tu nombre de usuario</h1>
-      <p>Es la primera vez que entras. ¿Cómo quieres que te llamemos?</p>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+    <AuthCard
+      title="Elige tu nombre de usuario"
+      subtitle="Es la primera vez que entras. ¿Cómo quieres que te llamemos?"
+    >
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
         <FormField
           id="username"
           label="Nombre de usuario"
           autoComplete="username"
+          placeholder="kevin_p"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           error={errors.username}
         />
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded border px-4 py-2 disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary mt-1 w-full">
           {submitting ? 'Guardando...' : 'Continuar'}
         </button>
-        {errors.form && <p className="text-sm text-red-600">{errors.form}</p>}
+        {errors.form && <p className="text-center text-sm text-danger-text">{errors.form}</p>}
       </form>
 
-      <button type="button" onClick={logout} className="underline">
-        Usar otra cuenta
-      </button>
-    </main>
+      <p className="text-center text-sm">
+        <button type="button" onClick={logout} className="link">
+          Usar otra cuenta
+        </button>
+      </p>
+    </AuthCard>
   )
 }

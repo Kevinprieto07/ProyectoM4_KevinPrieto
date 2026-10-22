@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { AuthCard } from '../components/AuthCard'
+import { Divider } from '../components/Divider'
 import { FormField } from '../components/FormField'
 import { GoogleButton } from '../components/GoogleButton'
 import { ROUTES } from '../routes/paths'
@@ -49,14 +51,13 @@ export function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-4 p-4">
-      <h1 className="text-2xl font-bold">Crear cuenta</h1>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+    <AuthCard title="Crea tu cuenta" subtitle="Empieza a recordar lo importante.">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
         <FormField
           id="username"
           label="Nombre de usuario"
           autoComplete="username"
+          placeholder="kevin_p"
           value={username}
           onChange={(event) => setUsername(event.target.value)}
           error={errors.username}
@@ -66,6 +67,7 @@ export function RegisterPage() {
           label="Correo electrónico"
           type="email"
           autoComplete="email"
+          placeholder="tucorreo@gmail.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           error={errors.email}
@@ -75,6 +77,7 @@ export function RegisterPage() {
           label="Contraseña"
           type="password"
           autoComplete="new-password"
+          placeholder="Mínimo 6 caracteres"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           error={errors.password}
@@ -84,29 +87,26 @@ export function RegisterPage() {
           label="Confirmar contraseña"
           type="password"
           autoComplete="new-password"
+          placeholder="Repite la contraseña"
           value={confirmPassword}
           onChange={(event) => setConfirmPassword(event.target.value)}
           error={errors.confirmPassword}
         />
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded border px-4 py-2 disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary mt-1 w-full">
           {submitting ? 'Creando cuenta...' : 'Crear cuenta'}
         </button>
-        {errors.form && <p className="text-sm text-red-600">{errors.form}</p>}
+        {errors.form && <p className="text-center text-sm text-danger-text">{errors.form}</p>}
       </form>
 
+      <Divider />
       <GoogleButton disabled={submitting} onErrors={setErrors} />
 
-      <p>
+      <p className="text-center text-sm text-muted">
         ¿Ya tienes cuenta?{' '}
-        <Link to={ROUTES.login} className="underline">
+        <Link to={ROUTES.login} className="link">
           Inicia sesión
         </Link>
       </p>
-    </main>
+    </AuthCard>
   )
 }

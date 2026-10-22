@@ -104,6 +104,7 @@ describe('POST /api/send-summary', () => {
     expect(input.Content.Simple.Subject.Data).toMatch(/^Resumen de tus tareas - /)
     expect(input.Content.Simple.Body.Text.Data).toContain('• Comprar pan')
     expect(input.Content.Simple.Body.Text.Data).toContain('✓ Pagar el arriendo')
+    expect(input.Content.Simple.Body.Html.Data).toContain('Remember-tasks')
   })
 
   it('explica el modo sandbox si SES rechaza el envío', async () => {

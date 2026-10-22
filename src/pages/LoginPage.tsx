@@ -1,6 +1,8 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { AuthCard } from '../components/AuthCard'
+import { Divider } from '../components/Divider'
 import { FormField } from '../components/FormField'
 import { GoogleButton } from '../components/GoogleButton'
 import { ROUTES } from '../routes/paths'
@@ -39,15 +41,14 @@ export function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex max-w-md flex-col gap-4 p-4">
-      <h1 className="text-2xl font-bold">Iniciar sesión</h1>
-
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
+    <AuthCard title="Bienvenido de nuevo" subtitle="Organiza tu día, sin olvidos.">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-3.5">
         <FormField
           id="email"
           label="Correo electrónico"
           type="email"
           autoComplete="email"
+          placeholder="tucorreo@gmail.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           error={errors.email}
@@ -57,29 +58,26 @@ export function LoginPage() {
           label="Contraseña"
           type="password"
           autoComplete="current-password"
+          placeholder="••••••••"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
           error={errors.password}
         />
-
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded border px-4 py-2 disabled:opacity-50"
-        >
+        <button type="submit" disabled={submitting} className="btn btn-primary mt-1 w-full">
           {submitting ? 'Entrando...' : 'Entrar'}
         </button>
-        {errors.form && <p className="text-sm text-red-600">{errors.form}</p>}
+        {errors.form && <p className="text-center text-sm text-danger-text">{errors.form}</p>}
       </form>
 
+      <Divider />
       <GoogleButton disabled={submitting} onErrors={setErrors} />
 
-      <p>
+      <p className="text-center text-sm text-muted">
         ¿No tienes cuenta?{' '}
-        <Link to={ROUTES.register} className="underline">
+        <Link to={ROUTES.register} className="link">
           Regístrate
         </Link>
       </p>
-    </main>
+    </AuthCard>
   )
 }
