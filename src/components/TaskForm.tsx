@@ -36,7 +36,7 @@ export function TaskForm({ onSubmit }: TaskFormProps) {
       setTitle('')
       setDescription('')
     } catch {
-      // El error ya lo notifica quien maneja onSubmit; se conservan los datos escritos.
+      return
     } finally {
       setSubmitting(false)
     }

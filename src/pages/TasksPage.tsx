@@ -1,15 +1,33 @@
+import { useState } from 'react'
 import toast from 'react-hot-toast'
 import { TaskForm } from '../components/TaskForm'
 import { TaskList } from '../components/TaskList'
 import { useAuth } from '../hooks/useAuth'
 import { useTasks } from '../hooks/useTasks'
 import { logout } from '../services/authService'
+import { sendSummary } from '../services/summaryService'
 import { createTask, deleteTask, toggleTask } from '../services/taskService'
 import type { NewTask, Task } from '../types/task'
 
 export function TasksPage() {
   const { user, profile } = useAuth()
   const { tasks, loading } = useTasks(user?.uid ?? null)
+  const [sendingSummary, setSendingSummary] = useState(false)
+  const pendingCount = tasks.filter((task) => !task.completed).length
+
+  async function handleSendSummary() {
+    if (!user || !profile) return
+    setSendingSummary(true)
+    try {
+      const message = await sendSummary(user, profile.username, tasks)
+      toast.success(message)
+    } catch (error) {
+      console.error('No se pudo enviar el resumen:', error)
+      toast.error(error instanceof Error ? error.message : 'No se pudo enviar el resumen.')
+    } finally {
+      setSendingSummary(false)
+    }
+  }
 
   async function handleLogout() {
     await logout()
@@ -63,6 +81,20 @@ export function TasksPage() {
       </header>
 
       <TaskForm onSubmit={handleCreate} />
+
+      <div className="flex flex-col gap-1">
+        <button
+          type="button"
+          onClick={handleSendSummary}
+          disabled={sendingSummary || pendingCount === 0}
+          className="rounded border px-4 py-2 disabled:opacity-50"
+        >
+          {sendingSummary ? 'Enviando...' : 'Enviar resumen por correo'}
+        </button>
+        {!loading && pendingCount === 0 && (
+          <p className="text-center text-sm">No tienes tareas pendientes para enviar.</p>
+        )}
+      </div>
 
       {loading ? (
         <p className="text-center">Cargando tareas...</p>

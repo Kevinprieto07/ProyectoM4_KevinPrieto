@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@aws-sdk/client-sesv2": "^3.1155.0",
     "@tailwindcss/vite": "^4.3.3",
     "firebase": "^13.0.0",
+    "jose": "^6.2.13",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-hot-toast": "^2.6.1",
@@ -25,6 +27,7 @@
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
     "typescript": "~6.0.2",
+    "vercel": "^65.0.0",
     "vite": "^8.3.0"
   }
 }

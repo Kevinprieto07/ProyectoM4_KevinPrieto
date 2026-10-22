@@ -36,7 +36,6 @@ export function subscribeToTasks(
     (snapshot) => {
       const tasks = snapshot.docs.map((taskDoc) => ({
         id: taskDoc.id,
-        // 'estimate' evita que createdAt sea null mientras el servidor confirma la tarea.
         ...(taskDoc.data({ serverTimestamps: 'estimate' }) as Omit<Task, 'id'>),
       }))
       onChange(tasks)
