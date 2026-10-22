@@ -23,6 +23,7 @@ const ses = new SESv2Client({
 interface SummaryTask {
   title: string
   description: string
+  completed: boolean
 }
 
 interface SummaryRequest {
@@ -35,7 +36,7 @@ function json(status: number, body: Record<string, string>) {
   return Response.json(body, { status })
 }
 
-async function getVerifiedEmail(request: Request) {
+async function getTokenUser(request: Request) {
   const authorization = request.headers.get('authorization') ?? ''
   if (!authorization.startsWith('Bearer ')) return null
 
@@ -45,7 +46,8 @@ async function getVerifiedEmail(request: Request) {
       issuer: `https://securetoken.google.com/${projectId}`,
       audience: projectId,
     })
-    return typeof payload.email === 'string' ? payload.email : null
+    if (typeof payload.email !== 'string') return null
+    return { email: payload.email, emailVerified: payload.email_verified === true }
   } catch {
     return null
   }
@@ -60,7 +62,7 @@ function isValidTimeZone(timeZone: string) {
   }
 }
 
-function parseSummaryRequest(body: unknown): SummaryRequest | null {
+export function parseSummaryRequest(body: unknown): SummaryRequest | null {
   if (typeof body !== 'object' || body === null) return null
   const { username, timeZone, tasks } = body as Record<string, unknown>
 
@@ -74,40 +76,64 @@ function parseSummaryRequest(body: unknown): SummaryRequest | null {
       task.title.length > 0 &&
       task.title.length <= MAX_TITLE_LENGTH &&
       typeof task.description === 'string' &&
-      task.description.length <= MAX_DESCRIPTION_LENGTH,
+      task.description.length <= MAX_DESCRIPTION_LENGTH &&
+      typeof task.completed === 'boolean',
   )
   if (!validTasks) return null
 
   return {
     username,
     timeZone,
-    tasks: tasks.map((task) => ({ title: task.title, description: task.description })),
+    tasks: tasks.map((task) => ({
+      title: task.title,
+      description: task.description,
+      completed: task.completed,
+    })),
   }
 }
 
-function buildSummaryText({ username, tasks }: SummaryRequest) {
-  const greeting = `Hola, ${username || 'usuario'}:`
+function plural(count: number, singular: string, pluralWord: string) {
+  return `${count} ${count === 1 ? singular : pluralWord}`
+}
 
-  if (tasks.length === 0) {
-    return `${greeting}\n\nNo tienes tareas pendientes. ¡Buen trabajo!\n`
-  }
-
-  const count = tasks.length === 1 ? '1 tarea pendiente' : `${tasks.length} tareas pendientes`
-  const list = tasks
+function formatTaskList(tasks: SummaryTask[], bullet: string) {
+  return tasks
     .map((task) => {
       const description = task.description
         ? `\n  ${task.description.replaceAll('\n', '\n  ')}`
         : ''
-      return `• ${task.title}${description}`
+      return `${bullet} ${task.title}${description}`
     })
     .join('\n')
+}
 
-  return `${greeting}\n\nTienes ${count}:\n\n${list}\n`
+export function buildSummaryText({ username, tasks }: SummaryRequest) {
+  const greeting = `Hola, ${username || 'usuario'}:`
+
+  if (tasks.length === 0) {
+    return `${greeting}\n\nNo tienes tareas registradas.\n`
+  }
+
+  const pending = tasks.filter((task) => !task.completed)
+  const completed = tasks.filter((task) => task.completed)
+
+  const sections = [
+    greeting,
+    `Tienes ${plural(tasks.length, 'tarea', 'tareas')}: ${plural(pending.length, 'pendiente', 'pendientes')} y ${plural(completed.length, 'completada', 'completadas')}.`,
+  ]
+  if (pending.length > 0) sections.push(`PENDIENTES\n${formatTaskList(pending, '•')}`)
+  if (completed.length > 0) sections.push(`COMPLETADAS\n${formatTaskList(completed, '✓')}`)
+
+  return `${sections.join('\n\n')}\n`
 }
 
 export async function POST(request: Request) {
-  const email = await getVerifiedEmail(request)
-  if (!email) return json(401, { error: 'No autorizado. Inicia sesión de nuevo.' })
+  const tokenUser = await getTokenUser(request)
+  if (!tokenUser) return json(401, { error: 'No autorizado. Inicia sesión de nuevo.' })
+  if (!tokenUser.emailVerified) {
+    return json(403, { error: 'Verifica tu correo antes de enviar resúmenes.' })
+  }
+  const { email } = tokenUser
 
   let body: unknown
   try {
@@ -128,7 +154,7 @@ export async function POST(request: Request) {
         Destination: { ToAddresses: [email] },
         Content: {
           Simple: {
-            Subject: { Data: `Resumen de tus tareas pendientes - ${date}`, Charset: 'UTF-8' },
+            Subject: { Data: `Resumen de tus tareas - ${date}`, Charset: 'UTF-8' },
             Body: { Text: { Data: buildSummaryText(summary), Charset: 'UTF-8' } },
           },
         },

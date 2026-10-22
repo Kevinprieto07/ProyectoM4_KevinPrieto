@@ -2,10 +2,12 @@ import type { User } from 'firebase/auth'
 import type { Task } from '../types/task'
 
 export async function sendSummary(user: User, username: string, tasks: Task[]) {
-  const token = await user.getIdToken()
-  const pendingTasks = tasks
-    .filter((task) => !task.completed)
-    .map(({ title, description }) => ({ title, description }))
+  const token = await user.getIdToken(true)
+  const summaryTasks = tasks.map(({ title, description, completed }) => ({
+    title,
+    description,
+    completed,
+  }))
 
   const response = await fetch('/api/send-summary', {
     method: 'POST',
@@ -16,7 +18,7 @@ export async function sendSummary(user: User, username: string, tasks: Task[]) {
     body: JSON.stringify({
       username,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      tasks: pendingTasks,
+      tasks: summaryTasks,
     }),
   })
 

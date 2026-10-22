@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import { EmailVerificationBanner } from '../components/EmailVerificationBanner'
 import { TaskForm } from '../components/TaskForm'
 import { TaskList } from '../components/TaskList'
 import { useAuth } from '../hooks/useAuth'
@@ -13,7 +14,7 @@ export function TasksPage() {
   const { user, profile } = useAuth()
   const { tasks, loading } = useTasks(user?.uid ?? null)
   const [sendingSummary, setSendingSummary] = useState(false)
-  const pendingCount = tasks.filter((task) => !task.completed).length
+  const [emailVerified, setEmailVerified] = useState(user?.emailVerified ?? false)
 
   async function handleSendSummary() {
     if (!user || !profile) return
@@ -80,19 +81,23 @@ export function TasksPage() {
         </button>
       </header>
 
+      {user && !emailVerified && (
+        <EmailVerificationBanner user={user} onVerified={() => setEmailVerified(true)} />
+      )}
+
       <TaskForm onSubmit={handleCreate} />
 
       <div className="flex flex-col gap-1">
         <button
           type="button"
           onClick={handleSendSummary}
-          disabled={sendingSummary || pendingCount === 0}
+          disabled={sendingSummary || tasks.length === 0 || !emailVerified}
           className="rounded border px-4 py-2 disabled:opacity-50"
         >
           {sendingSummary ? 'Enviando...' : 'Enviar resumen por correo'}
         </button>
-        {!loading && pendingCount === 0 && (
-          <p className="text-center text-sm">No tienes tareas pendientes para enviar.</p>
+        {!loading && tasks.length === 0 && (
+          <p className="text-center text-sm">Crea una tarea para poder enviar el resumen.</p>
         )}
       </div>
 
